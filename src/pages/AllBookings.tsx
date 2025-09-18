@@ -1,37 +1,33 @@
-import { Box, Card, CardContent, Divider, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, Divider, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import FooterAdmin from '../components/FooterAdmin';
 import NavbarAdmin from '../components/NavbarAdmin';
 
-interface Booking {
+interface RoomBooking {
   id: number;
-  roomName: string;
-  bookedBy: string;
-  startTime: string;
-  endTime: string;
-  status: string; // "booked", "available", etc.
+  name: string;
+  bookedBy: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  status: string; // "booked" or "available"
 }
 
 const AllBookings: React.FC = () => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<RoomBooking[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const response = await fetch('/api/rooms'); // Adjust API endpoint if needed
-        const data = await response.json();
-        let allBookings: Booking[] = [];
+        const response = await fetch('/api/rooms');
+        const data: RoomBooking[] = await response.json();
 
-        if (Array.isArray(data)) allBookings = data;
-        else if (Array.isArray(data.bookings)) allBookings = data.bookings;
-
-        // Filter only booked rooms
-        const bookedOnly = allBookings.filter(
-          (booking) => booking.status.toLowerCase() === 'booked'
+        // Only show rooms that are booked
+        const bookedRooms = data.filter(
+          (room) => room.status.toLowerCase() === 'booked'
         );
-        console.log(bookedOnly)
-        setBookings(bookedOnly);
+
+        setBookings(bookedRooms);
       } catch (error) {
         console.error('Failed to fetch bookings:', error);
         setBookings([]);
@@ -39,8 +35,26 @@ const AllBookings: React.FC = () => {
         setLoading(false);
       }
     };
+
     fetchBookings();
   }, []);
+
+  const handleCancelBooking = async (roomId: number) => {
+    try {
+      const response = await fetch(`/api/rooms/${roomId}/cancel`, {
+        method: 'PUT', // assuming backend uses PUT to cancel booking
+      });
+
+      if (response.ok) {
+        // Remove room from state immediately
+        setBookings((prev) => prev.filter((room) => room.id !== roomId));
+      } else {
+        console.error('Failed to cancel booking:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error canceling booking:', error);
+    }
+  };
 
   return (
     <Box
@@ -100,18 +114,26 @@ const AllBookings: React.FC = () => {
                   }}
                 >
                   <Typography variant="subtitle1" fontWeight="bold">
-                    Room: {booking.roomName}
+                    Room: {booking.name}
                   </Typography>
                   <Typography variant="body2">
                     Booked By: {booking.bookedBy}
                   </Typography>
                   <Typography variant="body2">
-                    Time: {new Date(booking.startTime).toLocaleString()} –{' '}
-                    {new Date(booking.endTime).toLocaleString()}
+                    Time: {booking.startTime} – {booking.endTime}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Status: {booking.status}
                   </Typography>
+
+                  <Button
+                    variant="contained"
+                    color="error"
+                    sx={{ mt: 2 }}
+                    onClick={() => handleCancelBooking(booking.id)}
+                  >
+                    Cancel Booking
+                  </Button>
                 </Box>
               ))
             ) : (

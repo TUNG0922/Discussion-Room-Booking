@@ -8,6 +8,7 @@ import {
 import {
   DataGrid,
   GridColDef,
+  GridRenderCellParams,
 } from '@mui/x-data-grid';
 import React, { useEffect, useState } from 'react';
 import FooterAdmin from '../components/FooterAdmin';
@@ -18,6 +19,8 @@ interface Room {
   name: string;
   status: string;
   bookedBy?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -32,13 +35,9 @@ const AdminDashboard: React.FC = () => {
       try {
         const response = await fetch('/api/rooms');
         const data = await response.json();
-        if (Array.isArray(data)) {
-          setRooms(data);
-        } else if (Array.isArray(data.rooms)) {
-          setRooms(data.rooms);
-        } else {
-          setRooms([]);
-        }
+        if (Array.isArray(data)) setRooms(data);
+        else if (Array.isArray(data.rooms)) setRooms(data.rooms);
+        else setRooms([]);
       } catch (error) {
         console.error('Failed to fetch rooms:', error);
         setRooms([]);
@@ -49,17 +48,6 @@ const AdminDashboard: React.FC = () => {
     fetchRooms();
   }, []);
 
-  const statusChip = (status: string) => {
-    const lower = status.toLowerCase();
-    let color: 'success' | 'error' | 'warning' | 'default' = 'default';
-    if (lower === 'available') color = 'success';
-    else if (lower === 'booked') color = 'error';
-    else if (lower === 'maintenance') color = 'warning';
-
-    return <Chip label={status} color={color} size="small" />;
-  };
-
-  // Define table columns (no createdAt / updatedAt)
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 80, sortable: true },
     { field: 'name', headerName: 'Room Name', flex: 1, minWidth: 150, sortable: true },
@@ -69,15 +57,25 @@ const AdminDashboard: React.FC = () => {
       flex: 1,
       minWidth: 150,
       sortable: true,
-      renderCell: (params: any) => statusChip(params.value),
+      renderCell: () => (
+        <Chip label="Available" color="success" size="small" />
+      ),
     },
     {
       field: 'bookedBy',
       headerName: 'Booked By',
-      flex: 1,
-      minWidth: 200,
-      sortable: true,
-      renderCell: (params: any) => params.value ?? '—',
+      flex: 2,
+      minWidth: 250,
+      sortable: false,
+      renderCell: (params: GridRenderCellParams<Room>) => {
+        const room = params.row;
+        if (!room.bookedBy || !room.startTime || !room.endTime) return '—';
+        return (
+          <Typography variant="body2">
+            {room.bookedBy} ({room.startTime} – {room.endTime})
+          </Typography>
+        );
+      },
     },
   ];
 
@@ -112,7 +110,6 @@ const AdminDashboard: React.FC = () => {
           }}
         >
           <CardContent>
-            {/* Welcome Header */}
             <Box
               sx={{
                 mb: 4,
@@ -131,7 +128,6 @@ const AdminDashboard: React.FC = () => {
               </Typography>
             </Box>
 
-            {/* Rooms Data Table */}
             {loading ? (
               <Typography textAlign="center">Loading rooms...</Typography>
             ) : rooms.length > 0 ? (
@@ -146,13 +142,8 @@ const AdminDashboard: React.FC = () => {
                   sx={{
                     border: 'none',
                     boxShadow: 3,
-                    '& .MuiDataGrid-cell': {
-                      borderBottom: '1px solid #e0e0e0',
-                    },
-                    '& .MuiDataGrid-columnHeaders': {
-                      backgroundColor: '#f5f5f5',
-                      fontWeight: 'bold',
-                    },
+                    '& .MuiDataGrid-cell': { borderBottom: '1px solid #e0e0e0' },
+                    '& .MuiDataGrid-columnHeaders': { backgroundColor: '#f5f5f5', fontWeight: 'bold' },
                   }}
                 />
               </div>

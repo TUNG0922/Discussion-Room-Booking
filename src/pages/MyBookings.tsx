@@ -8,6 +8,8 @@ interface Room {
   name: string;
   status: string;
   bookedBy?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
 }
 
 const MyBookings: React.FC = () => {
@@ -27,7 +29,6 @@ const MyBookings: React.FC = () => {
             room.status.toLowerCase() === 'booked' &&
             room.bookedBy?.toLowerCase() === username?.toLowerCase()
         );
-
         setBookings(userBookings);
       } catch (error) {
         console.error('Failed to fetch bookings:', error);
@@ -46,7 +47,6 @@ const MyBookings: React.FC = () => {
       });
 
       if (response.ok) {
-        // remove from state immediately
         setBookings((prev) => prev.filter((room) => room.id !== roomId));
       } else {
         console.error('Failed to cancel booking:', await response.text());
@@ -113,15 +113,20 @@ const MyBookings: React.FC = () => {
                 }}
               >
                 <CardContent>
-                  <Typography
-                    variant="h6"
-                    fontWeight="bold"
-                    sx={{ mb: 1 }}
-                  >
+                  <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
                     {booking.name}
                   </Typography>
                   <Typography>Status: {booking.status}</Typography>
                   <Typography>Booked By: {booking.bookedBy}</Typography>
+
+                  {booking.startTime && booking.endTime && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography fontWeight="bold">Time Slot:</Typography>
+                      <Typography>
+                        {booking.startTime} – {booking.endTime}
+                      </Typography>
+                    </Box>
+                  )}
 
                   <Button
                     fullWidth
