@@ -9,7 +9,7 @@ interface Booking {
   bookedBy: string;
   startTime: string;
   endTime: string;
-  status: string;
+  status: string; // "booked", "available", etc.
 }
 
 const AllBookings: React.FC = () => {
@@ -19,15 +19,19 @@ const AllBookings: React.FC = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const response = await fetch('/api/bookings'); // Adjust API endpoint if needed
+        const response = await fetch('/api/rooms'); // Adjust API endpoint if needed
         const data = await response.json();
-        if (Array.isArray(data)) {
-          setBookings(data);
-        } else if (Array.isArray(data.bookings)) {
-          setBookings(data.bookings);
-        } else {
-          setBookings([]);
-        }
+        let allBookings: Booking[] = [];
+
+        if (Array.isArray(data)) allBookings = data;
+        else if (Array.isArray(data.bookings)) allBookings = data.bookings;
+
+        // Filter only booked rooms
+        const bookedOnly = allBookings.filter(
+          (booking) => booking.status.toLowerCase() === 'booked'
+        );
+        console.log(bookedOnly)
+        setBookings(bookedOnly);
       } catch (error) {
         console.error('Failed to fetch bookings:', error);
         setBookings([]);
@@ -76,7 +80,7 @@ const AllBookings: React.FC = () => {
               textAlign="center"
               sx={{ mb: 3 }}
             >
-              All Bookings
+              All Booked Rooms
             </Typography>
             <Divider sx={{ mb: 3 }} />
 
@@ -111,7 +115,7 @@ const AllBookings: React.FC = () => {
                 </Box>
               ))
             ) : (
-              <Typography textAlign="center">No bookings available</Typography>
+              <Typography textAlign="center">No booked rooms available</Typography>
             )}
           </CardContent>
         </Card>

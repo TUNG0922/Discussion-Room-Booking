@@ -1,14 +1,60 @@
 import { Box, Button, Card, CardContent, Container, Typography } from '@mui/material';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 
+interface Room {
+  id: number;
+  name: string;
+  status: string;
+  bookedBy?: string | null;
+}
+
 const MyBookings: React.FC = () => {
-  const bookings = [
-    { id: 1, room: 'Room A', date: '2025-09-20', time: '10:00 AM - 12:00 PM' },
-    { id: 2, room: 'Room B', date: '2025-09-22', time: '2:00 PM - 4:00 PM' },
-    { id: 3, room: 'Room C', date: '2025-09-25', time: '9:00 AM - 11:00 AM' },
-  ];
+  const username = localStorage.getItem('username'); // current logged-in user
+  const [bookings, setBookings] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const response = await fetch('/api/rooms');
+        const data: Room[] = await response.json();
+
+        // Filter only rooms booked by this user
+        const userBookings = data.filter(
+          (room) =>
+            room.status.toLowerCase() === 'booked' &&
+            room.bookedBy?.toLowerCase() === username?.toLowerCase()
+        );
+
+        setBookings(userBookings);
+      } catch (error) {
+        console.error('Failed to fetch bookings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, [username]);
+
+  const handleCancelBooking = async (roomId: number) => {
+    try {
+      const response = await fetch(`/api/rooms/${roomId}/cancel`, {
+        method: 'PUT',
+      });
+
+      if (response.ok) {
+        // remove from state immediately
+        setBookings((prev) => prev.filter((room) => room.id !== roomId));
+      } else {
+        console.error('Failed to cancel booking:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error canceling booking:', error);
+    }
+  };
 
   return (
     <Box
@@ -32,44 +78,69 @@ const MyBookings: React.FC = () => {
           My Bookings
         </Typography>
 
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 3,
-            justifyContent: 'center',
-          }}
-        >
-          {bookings.map((booking) => (
-            <Card
-              key={booking.id}
-              sx={{
-                width: 250,
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                color: 'white',
-                borderRadius: 3,
-                boxShadow: 6,
-                backdropFilter: 'blur(5px)',
-                border: '1px solid rgba(255,255,255,0.2)',
-              }}
-            >
-              <CardContent>
-                <Typography variant="h6" fontWeight="bold">
-                  {booking.room}
-                </Typography>
-                <Typography>Date: {booking.date}</Typography>
-                <Typography>Time: {booking.time}</Typography>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  sx={{ mt: 2, fontWeight: 'bold' }}
-                >
-                  Cancel Booking
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
+        {loading ? (
+          <Typography textAlign="center" mt={4}>
+            Loading...
+          </Typography>
+        ) : bookings.length === 0 ? (
+          <Typography textAlign="center" mt={4}>
+            You have no bookings yet.
+          </Typography>
+        ) : (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: 4,
+              mt: 4,
+            }}
+          >
+            {bookings.map((booking) => (
+              <Card
+                key={booking.id}
+                sx={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  color: 'white',
+                  borderRadius: 4,
+                  boxShadow: 6,
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-6px)',
+                    boxShadow: 12,
+                  },
+                }}
+              >
+                <CardContent>
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    sx={{ mb: 1 }}
+                  >
+                    {booking.name}
+                  </Typography>
+                  <Typography>Status: {booking.status}</Typography>
+                  <Typography>Booked By: {booking.bookedBy}</Typography>
+
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    sx={{
+                      mt: 3,
+                      fontWeight: 'bold',
+                      backgroundColor: '#FF6B6B',
+                      '&:hover': { backgroundColor: '#E63946' },
+                    }}
+                    onClick={() => handleCancelBooking(booking.id)}
+                  >
+                    Cancel Booking
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        )}
       </Container>
 
       <Footer />

@@ -1,4 +1,14 @@
-import { Box, Card, CardContent, Chip, Divider, Typography } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Typography,
+} from '@mui/material';
+import {
+  DataGrid,
+  GridColDef,
+} from '@mui/x-data-grid';
 import React, { useEffect, useState } from 'react';
 import FooterAdmin from '../components/FooterAdmin';
 import NavbarAdmin from '../components/NavbarAdmin';
@@ -7,8 +17,7 @@ interface Room {
   id: number;
   name: string;
   status: string;
-  createdAt: string;
-  updatedAt: string;
+  bookedBy?: string | null;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -40,18 +49,37 @@ const AdminDashboard: React.FC = () => {
     fetchRooms();
   }, []);
 
-  const statusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'available':
-        return 'success';
-      case 'occupied':
-        return 'error';
-      case 'maintenance':
-        return 'warning';
-      default:
-        return 'default';
-    }
+  const statusChip = (status: string) => {
+    const lower = status.toLowerCase();
+    let color: 'success' | 'error' | 'warning' | 'default' = 'default';
+    if (lower === 'available') color = 'success';
+    else if (lower === 'booked') color = 'error';
+    else if (lower === 'maintenance') color = 'warning';
+
+    return <Chip label={status} color={color} size="small" />;
   };
+
+  // Define table columns (no createdAt / updatedAt)
+  const columns: GridColDef[] = [
+    { field: 'id', headerName: 'ID', width: 80, sortable: true },
+    { field: 'name', headerName: 'Room Name', flex: 1, minWidth: 150, sortable: true },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 1,
+      minWidth: 150,
+      sortable: true,
+      renderCell: (params: any) => statusChip(params.value),
+    },
+    {
+      field: 'bookedBy',
+      headerName: 'Booked By',
+      flex: 1,
+      minWidth: 200,
+      sortable: true,
+      renderCell: (params: any) => params.value ?? '—',
+    },
+  ];
 
   return (
     <Box
@@ -60,7 +88,6 @@ const AdminDashboard: React.FC = () => {
         flexDirection: 'column',
         minHeight: '100vh',
         background: 'linear-gradient(to right, #42a5f5, #1e88e5, #1976d2)',
-        color: 'black',
       }}
     >
       <NavbarAdmin />
@@ -77,16 +104,11 @@ const AdminDashboard: React.FC = () => {
         <Card
           sx={{
             width: '100%',
-            maxWidth: 1200, // make the card broader
+            maxWidth: 1200,
             backgroundColor: '#ffffff',
             borderRadius: 4,
             boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
             p: 4,
-            transition: 'transform 0.3s, box-shadow 0.3s',
-            '&:hover': {
-              transform: 'translateY(-5px)',
-              boxShadow: '0 15px 35px rgba(0,0,0,0.3)',
-            },
           }}
         >
           <CardContent>
@@ -109,46 +131,31 @@ const AdminDashboard: React.FC = () => {
               </Typography>
             </Box>
 
-            {/* Rooms Section */}
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-              Rooms
-            </Typography>
-            <Divider sx={{ mb: 3 }} />
-
+            {/* Rooms Data Table */}
             {loading ? (
               <Typography textAlign="center">Loading rooms...</Typography>
             ) : rooms.length > 0 ? (
-              rooms.map((room) => (
-                <Box
-                  key={room.id}
+              <div style={{ height: 'auto', width: '100%' }}>
+                <DataGrid
+                  rows={rooms}
+                  columns={columns}
+                  disableColumnMenu
+                  disableRowSelectionOnClick
+                  autoHeight
+                  hideFooter
                   sx={{
-                    mb: 3,
-                    p: 2,
-                    borderRadius: 2,
-                    border: '1px solid #e0e0e0',
-                    transition: 'background 0.3s',
-                    '&:hover': { backgroundColor: '#f5f5f5' },
+                    border: 'none',
+                    boxShadow: 3,
+                    '& .MuiDataGrid-cell': {
+                      borderBottom: '1px solid #e0e0e0',
+                    },
+                    '& .MuiDataGrid-columnHeaders': {
+                      backgroundColor: '#f5f5f5',
+                      fontWeight: 'bold',
+                    },
                   }}
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      mb: 1,
-                    }}
-                  >
-                    <Typography variant="subtitle1" fontWeight="bold">
-                      {room.name}
-                    </Typography>
-                    <Chip label={room.status} color={statusColor(room.status)} size="small" />
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Created: {new Date(room.createdAt).toLocaleString()} | Updated:{' '}
-                    {new Date(room.updatedAt).toLocaleString()}
-                  </Typography>
-                </Box>
-              ))
+                />
+              </div>
             ) : (
               <Typography textAlign="center">No rooms available</Typography>
             )}
