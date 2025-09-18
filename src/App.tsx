@@ -1,25 +1,24 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import AdminDashboard from './pages/AdminDashboard';
+import AllBookings from './pages/AllBookings';
+import MyBookings from './pages/MyBookings';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
+import UserDashboard from './pages/UserDashboard';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/user-dashboard" element={<UserDashboard />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/my-bookings" element={<MyBookings />} />
+        <Route path="/all-bookings" element={<AllBookings />} /> {/* 👈 here */}
+        <Route path="*" element={<SignIn />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
