@@ -1,15 +1,5 @@
-import {
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  Typography,
-} from '@mui/material';
-import {
-  DataGrid,
-  GridColDef,
-  GridRenderCellParams,
-} from '@mui/x-data-grid';
+import { Box, Card, CardContent, Chip, Typography } from '@mui/material';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import React, { useEffect, useState } from 'react';
 import FooterAdmin from '../components/FooterAdmin';
 import NavbarAdmin from '../components/NavbarAdmin';
@@ -17,10 +7,7 @@ import NavbarAdmin from '../components/NavbarAdmin';
 interface Room {
   id: number;
   name: string;
-  status: string;
-  bookedBy?: string | null;
-  startTime?: string | null;
-  endTime?: string | null;
+  status: string; // "booked" or "available"
 }
 
 const AdminDashboard: React.FC = () => {
@@ -36,7 +23,6 @@ const AdminDashboard: React.FC = () => {
         const response = await fetch('/api/rooms');
         const data = await response.json();
         if (Array.isArray(data)) setRooms(data);
-        else if (Array.isArray(data.rooms)) setRooms(data.rooms);
         else setRooms([]);
       } catch (error) {
         console.error('Failed to fetch rooms:', error);
@@ -57,24 +43,10 @@ const AdminDashboard: React.FC = () => {
       flex: 1,
       minWidth: 150,
       sortable: true,
-      renderCell: () => (
-        <Chip label="Available" color="success" size="small" />
-      ),
-    },
-    {
-      field: 'bookedBy',
-      headerName: 'Booked By',
-      flex: 2,
-      minWidth: 250,
-      sortable: false,
-      renderCell: (params: GridRenderCellParams<Room>) => {
-        const room = params.row;
-        if (!room.bookedBy || !room.startTime || !room.endTime) return '—';
-        return (
-          <Typography variant="body2">
-            {room.bookedBy} ({room.startTime} – {room.endTime})
-          </Typography>
-        );
+      renderCell: (params) => {
+        const color = params.value === 'booked' ? 'error' : 'success';
+        const label = params.value === 'booked' ? 'Booked' : 'Available';
+        return <Chip label={label} color={color} size="small" />;
       },
     },
   ];

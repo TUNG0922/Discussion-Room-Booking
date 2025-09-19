@@ -1,18 +1,19 @@
 import {
-    Box,
-    Button,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Modal,
-    Select,
-    Typography,
+  Box,
+  Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Modal,
+  Select,
+  Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 
 interface BookingSlot {
   startTime: string;
   endTime: string;
+  status: string; // add this
 }
 
 interface Room {
@@ -35,27 +36,25 @@ const BookTime: React.FC<BookTimeProps> = ({ room, onClose, onBook }) => {
     `${i.toString().padStart(2, '0')}:00`
   );
 
-  // Fetch current bookings for this room
+  // Fetch booked slots for this room from booked_room table
   useEffect(() => {
-    const fetchBookings = async () => {
+    const fetchBookedSlots = async () => {
       try {
-        const response = await fetch(`/api/rooms/${room.id}`);
-        const data = await response.json();
-
-        const slots: BookingSlot[] = [];
-        if (data.startTime && data.endTime) {
-          slots.push({ startTime: data.startTime, endTime: data.endTime });
-        }
-
+        const response = await fetch(
+          `/api/booked-rooms?roomName=${encodeURIComponent(room.name)}`
+        );
+        const data: BookingSlot[] = await response.json();
+        console.log('dataa', data)
+        // Only consider slots that are booked
+        const slots = data.filter((b) => b.status.toLowerCase() === 'booked');
         setBookedSlots(slots);
       } catch (err) {
-        console.error('Failed to fetch bookings:', err);
+        console.error('Failed to fetch booked slots:', err);
         setBookedSlots([]);
       }
     };
-
-    fetchBookings();
-  }, [room.id]);
+    fetchBookedSlots();
+  }, [room.name]);
 
   // Check if a specific hour is already booked
   const isHourBooked = (hour: number) =>
@@ -65,29 +64,58 @@ const BookTime: React.FC<BookTimeProps> = ({ room, onClose, onBook }) => {
       return hour >= start && hour < end;
     });
 
-  // Start times that are free
+  // Available start times
   const availableStartTimes = hours.filter(
     (h) => !isHourBooked(parseInt(h.split(':')[0], 10))
   );
 
-  // End times consecutive after startTime, max 2 hours, must be free
+  // Available end times based on selected start time
   const getAvailableEndTimes = () => {
     if (!startTime) return [];
     const startHour = parseInt(startTime.split(':')[0], 10);
     const endTimes: string[] = [];
     for (let i = startHour + 1; i <= startHour + 2 && i < 24; i++) {
-      if (isHourBooked(i)) break; // stop if next hour is booked
+      if (isHourBooked(i)) break;
       endTimes.push(`${i.toString().padStart(2, '0')}:00`);
     }
     return endTimes;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!startTime || !endTime) {
       alert('Please select both start and end times.');
       return;
     }
-    onBook(room.id, startTime, endTime);
+
+    const username = localStorage.getItem('username') || 'Guest';
+
+    try {
+      const response = await fetch('/api/booked-rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: room.name,
+          bookedBy: username,
+          startTime,
+          endTime,
+        }),
+      });
+
+      if (response.ok) {
+        const bookedRoom = await response.json();
+        alert(
+          `Room booked successfully! (${bookedRoom.startTime} - ${bookedRoom.endTime})`
+        );
+        onBook(room.id, startTime, endTime);
+        onClose();
+      } else {
+        const errorText = await response.text();
+        alert(`Failed to book room: ${errorText}`);
+      }
+    } catch (err) {
+      console.error('Booking error:', err);
+      alert('An error occurred while booking the room.');
+    }
   };
 
   return (

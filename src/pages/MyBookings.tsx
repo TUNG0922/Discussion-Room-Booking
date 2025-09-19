@@ -3,31 +3,33 @@ import React, { useEffect, useState } from 'react';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 
-interface Room {
+interface BookedRoom {
   id: number;
   name: string;
   status: string;
-  bookedBy?: string | null;
-  startTime?: string | null;
-  endTime?: string | null;
+  bookedBy: string;
+  startTime: string;
+  endTime: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const MyBookings: React.FC = () => {
   const username = localStorage.getItem('username'); // current logged-in user
-  const [bookings, setBookings] = useState<Room[]>([]);
+  const [bookings, setBookings] = useState<BookedRoom[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const response = await fetch('/api/rooms');
-        const data: Room[] = await response.json();
+        const response = await fetch('/api/booked-rooms');
+        const data: BookedRoom[] = await response.json();
 
-        // Filter only rooms booked by this user
+        // Filter only bookings made by this user
         const userBookings = data.filter(
-          (room) =>
-            room.status.toLowerCase() === 'booked' &&
-            room.bookedBy?.toLowerCase() === username?.toLowerCase()
+          (booking) =>
+            booking.status.toLowerCase() === 'booked' &&
+            booking.bookedBy.toLowerCase() === username?.toLowerCase()
         );
         setBookings(userBookings);
       } catch (error) {
@@ -40,14 +42,14 @@ const MyBookings: React.FC = () => {
     fetchBookings();
   }, [username]);
 
-  const handleCancelBooking = async (roomId: number) => {
+  const handleCancelBooking = async (bookingId: number) => {
     try {
-      const response = await fetch(`/api/rooms/${roomId}/cancel`, {
+      const response = await fetch(`/api/booked-rooms/${bookingId}/cancel`, {
         method: 'PUT',
       });
 
       if (response.ok) {
-        setBookings((prev) => prev.filter((room) => room.id !== roomId));
+        setBookings((prev) => prev.filter((b) => b.id !== bookingId));
       } else {
         console.error('Failed to cancel booking:', await response.text());
       }
@@ -63,7 +65,7 @@ const MyBookings: React.FC = () => {
         flexDirection: 'column',
         minHeight: '100vh',
         background: 'linear-gradient(to right, #6D5BBA, #8D58BF, #A079C7)',
-        color: 'white',
+        color: 'black',
       }}
     >
       <Navbar />
@@ -74,16 +76,17 @@ const MyBookings: React.FC = () => {
           fontWeight="bold"
           gutterBottom
           textAlign="center"
+          color="white"
         >
           My Bookings
         </Typography>
 
         {loading ? (
-          <Typography textAlign="center" mt={4}>
+          <Typography textAlign="center" mt={4} color="white">
             Loading...
           </Typography>
         ) : bookings.length === 0 ? (
-          <Typography textAlign="center" mt={4}>
+          <Typography textAlign="center" mt={4} color="white">
             You have no bookings yet.
           </Typography>
         ) : (
@@ -99,12 +102,10 @@ const MyBookings: React.FC = () => {
               <Card
                 key={booking.id}
                 sx={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  color: 'white',
+                  background: '#ffffff',
+                  color: 'black',
                   borderRadius: 4,
                   boxShadow: 6,
-                  backdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(255,255,255,0.2)',
                   transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-6px)',

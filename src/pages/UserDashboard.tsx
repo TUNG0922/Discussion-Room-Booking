@@ -69,8 +69,7 @@ const UserDashboard: React.FC = () => {
         setSelectedRoom(null);
       } else {
         const errorMsg = await response.text();
-        alert(errorMsg); // show backend error
-        // Refresh the room to get updated bookings
+        alert(errorMsg);
         const freshResp = await fetch(`/api/rooms/${roomId}`);
         const freshRoom = await freshResp.json();
         setRooms((prev) =>
@@ -163,27 +162,6 @@ const UserDashboard: React.FC = () => {
         <Container maxWidth="lg" sx={{ mt: 6, mb: 6 }}>
           <Card
             sx={{
-              p: 5,
-              borderRadius: 3,
-              boxShadow: 8,
-              background: 'linear-gradient(135deg, #6D5BBA, #8D58BF)',
-              color: 'white',
-              textAlign: 'center',
-              mb: 6,
-            }}
-          >
-            <CardContent>
-              <Typography variant="h3" gutterBottom fontWeight="bold">
-                Welcome Back, {username}!
-              </Typography>
-              <Typography variant="h6">
-                View available rooms and book instantly.
-              </Typography>
-            </CardContent>
-          </Card>
-
-          <Card
-            sx={{
               p: 4,
               borderRadius: 3,
               boxShadow: 10,
@@ -191,6 +169,15 @@ const UserDashboard: React.FC = () => {
             }}
           >
             <CardContent>
+              {/* Welcome message */}
+              <Typography variant="h3" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>
+                Welcome Back, {username}!
+              </Typography>
+              <Typography variant="h6" sx={{ mb: 4 }}>
+                View available rooms and book instantly.
+              </Typography>
+
+              {/* Rooms section */}
               <Typography variant="h4" fontWeight="bold" sx={{ mb: 4 }}>
                 All Rooms
               </Typography>
@@ -204,7 +191,7 @@ const UserDashboard: React.FC = () => {
                 filterMode="client"
                 hideFooter
                 autoHeight
-                getRowId={(row) => row.id} // Ensure unique row id
+                getRowId={(row) => row.id}
                 sx={{
                   border: 'none',
                   fontSize: '1rem',
